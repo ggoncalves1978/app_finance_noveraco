@@ -12,7 +12,11 @@
       "Bash(node -r dotenv/config -e ' *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Gabriel Gonçalves\\\\OneDrive\\\\Projetos\\\\GitHub_Personal\\\\Projetos\\\\app_financas_novera\" -Recurse -Include \"page.tsx\", \"layout.tsx\")",
       "Bash(Select-Object FullName)",
-      "Bash(pkill -f \"node.*dev\")"
+      "Bash(pkill -f \"node.*dev\")",
+      "Bash(git add *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Gabriel Gon�alves\\OneDrive\\Projetos\\GitHub_Personal\\Projetos\\app_financas_novera"
     ]
   },
   "enableAllProjectMcpServers": true,

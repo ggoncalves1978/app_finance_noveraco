@@ -171,67 +171,78 @@ export function OrdersTable({ initialOrders, initialTotal }: Props) {
   return (
     <>
       {/* Filtros */}
-      <div className="flex flex-wrap gap-2 items-end">
-        <div className="flex gap-1">
+      <div className="space-y-4">
+        {/* Linha 1: Busca */}
+        <div className="flex gap-2">
           <Input
-            placeholder="Buscar pedido, cliente…"
+            placeholder="Buscar por ID do pedido ou nome do cliente…"
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && applySearch()}
-            className="w-56"
+            className="flex-1"
           />
-          <Button variant="outline" size="icon" onClick={applySearch}>
+          <Button variant="outline" size="icon" onClick={applySearch} title="Buscar">
             <Search className="h-4 w-4" />
           </Button>
         </div>
 
-        <Select value={platform || 'all'} onValueChange={v => { setPlatform(v === 'all' ? '' : (v ?? '')); setPage(1) }}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Plataforma" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            {Object.entries(PLATFORM_LABELS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Linha 2: Filtros */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Select value={platform || 'all'} onValueChange={v => { setPlatform(v === 'all' ? '' : (v ?? '')); setPage(1) }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todas as plataformas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as plataformas</SelectItem>
+              {Object.entries(PLATFORM_LABELS).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={status || 'all'} onValueChange={v => { setStatus(v === 'all' ? '' : (v ?? '')); setPage(1) }}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {STATUS_OPTIONS.map(s => (
-              <SelectItem key={s} value={s}>{STATUS_CONFIG[s]?.label ?? s}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={status || 'all'} onValueChange={v => { setStatus(v === 'all' ? '' : (v ?? '')); setPage(1) }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos os status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              {STATUS_OPTIONS.map(s => (
+                <SelectItem key={s} value={s}>{STATUS_CONFIG[s]?.label ?? s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <div className="flex items-center gap-1">
           <Input
             type="date"
             value={dateFrom}
             onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-            className="w-36 text-sm"
+            placeholder="Data inicial"
           />
-          <span className="text-muted-foreground text-xs">até</span>
+
           <Input
             type="date"
             value={dateTo}
             onChange={e => { setDateTo(e.target.value); setPage(1) }}
-            className="w-36 text-sm"
+            placeholder="Data final"
           />
         </div>
 
+        {/* Filtros ativos */}
         {(platform || status || dateFrom || dateTo || search) && (
-          <Button variant="ghost" size="sm" onClick={() => {
-            setPlatform(''); setStatus(''); setDateFrom(''); setDateTo('')
-            setSearch(''); setSearchInput(''); setPage(1)
-          }}>
-            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Limpar
-          </Button>
+          <div className="flex flex-wrap gap-2 items-center">
+            <p className="text-sm font-medium text-muted-foreground">Filtros ativos:</p>
+            {platform && <Badge variant="secondary" className="gap-1">{PLATFORM_LABELS[platform] ?? platform}</Badge>}
+            {status && <Badge variant="secondary" className="gap-1">{STATUS_CONFIG[status]?.label ?? status}</Badge>}
+            {dateFrom && <Badge variant="secondary" className="gap-1">Desde {new Date(dateFrom).toLocaleDateString('pt-BR')}</Badge>}
+            {dateTo && <Badge variant="secondary" className="gap-1">Até {new Date(dateTo).toLocaleDateString('pt-BR')}</Badge>}
+            {search && <Badge variant="secondary" className="gap-1">"{search}"</Badge>}
+            <Button variant="ghost" size="sm" onClick={() => {
+              setPlatform(''); setStatus(''); setDateFrom(''); setDateTo('')
+              setSearch(''); setSearchInput(''); setPage(1)
+            }}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1" /> Limpar tudo
+            </Button>
+          </div>
         )}
       </div>
 
