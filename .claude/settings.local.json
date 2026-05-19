@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma *)",
+      "Bash(npm install *)",
+      "Bash(Get-Date -Format \"yyyyMMddHHmmss\")",
+      "Bash(node -e \"console.log\\(new Date\\(\\).toISOString\\(\\).replace\\(/[-:T]/g,''\\).slice\\(0,14\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(npx shadcn@latest add input label card --yes)",
+      "Bash(node -e \"require\\('@hookform/resolvers/zod'\\); console.log\\('ok'\\)\")",
+      "Bash(npm run *)",
+      "Bash(node -r dotenv/config -e ' *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Gabriel Gonçalves\\\\OneDrive\\\\Projetos\\\\GitHub_Personal\\\\Projetos\\\\app_financas_novera\" -Recurse -Include \"page.tsx\", \"layout.tsx\")",
+      "Bash(Select-Object FullName)",
+      "Bash(pkill -f \"node.*dev\")"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

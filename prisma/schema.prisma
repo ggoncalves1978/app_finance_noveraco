@@ -1,0 +1,310 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  OPERADOR
+  VISUALIZADOR
+
+  @@map("user_role")
+}
+
+enum OrderStatus {
+  PENDENTE
+  PAGO
+  ENVIADO
+  ENTREGUE
+  CANCELADO
+  DEVOLVIDO
+
+  @@map("order_status")
+}
+
+enum OrderSource {
+  MANUAL
+  SELLE7
+  BLING
+
+  @@map("order_source")
+}
+
+enum SeoCampaignType {
+  SEO_ORGANICO
+  PRODUTO_PATROCINADO
+  ADS
+
+  @@map("seo_campaign_type")
+}
+
+enum SeoCampaignStatus {
+  ATIVO
+  PAUSADO
+  ENCERRADO
+
+  @@map("seo_campaign_status")
+}
+
+enum KeywordCompetition {
+  BAIXA
+  MEDIA
+  ALTA
+
+  @@map("keyword_competition")
+}
+
+// ─── Tabelas ──────────────────────────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  users            User[]
+  products         Product[]
+  platformConfigs  PlatformConfig[]
+  pricings         Pricing[]
+  orders           Order[]
+  seoCampaigns     SeoCampaign[]
+  seoKeywords      SeoKeyword[]
+  seoContentAudits SeoContentAudit[]
+
+  @@map("organizations")
+}
+
+// Extende auth.users do Supabase com role e org
+model User {
+  id             String   @id @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  email          String   @unique
+  name           String?
+  role           UserRole @default(OPERADOR)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  pricings         Pricing[]
+  orders           Order[]
+  seoCampaigns     SeoCampaign[]
+  seoContentAudits SeoContentAudit[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Product {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  sku            String
+  name           String
+  description    String?
+  costPrice      Decimal  @map("cost_price") @db.Decimal(10, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  pricings         Pricing[]
+  orderItems       OrderItem[]
+  seoKeywords      SeoKeyword[]
+  seoContentAudits SeoContentAudit[]
+
+  @@unique([organizationId, sku])
+  @@index([organizationId])
+  @@map("products")
+}
+
+model PlatformConfig {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  platform       String
+  name           String
+  commissionRate Decimal  @map("commission_rate") @db.Decimal(5, 2)
+  fixedFee       Decimal  @default(0) @map("fixed_fee") @db.Decimal(10, 2)
+  taxRate        Decimal  @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  description    String?
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, platform])
+  @@map("platform_configs")
+}
+
+model Pricing {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String   @map("organization_id") @db.Uuid
+  productId        String   @map("product_id") @db.Uuid
+  platform         String
+  costPrice        Decimal  @map("cost_price") @db.Decimal(10, 2)
+  shippingCost     Decimal  @default(0) @map("shipping_cost") @db.Decimal(10, 2)
+  commissionRate   Decimal  @map("commission_rate") @db.Decimal(5, 2)
+  fixedFee         Decimal  @default(0) @map("fixed_fee") @db.Decimal(10, 2)
+  taxRate          Decimal  @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  desiredMargin    Decimal  @map("desired_margin") @db.Decimal(5, 2)
+  suggestedPrice   Decimal  @map("suggested_price") @db.Decimal(10, 2)
+  netProfit        Decimal  @map("net_profit") @db.Decimal(10, 2)
+  netMarginPercent Decimal  @map("net_margin_percent") @db.Decimal(5, 2)
+  notes            String?
+  createdBy        String   @map("created_by") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  product      Product      @relation(fields: [productId], references: [id])
+  creator      User         @relation(fields: [createdBy], references: [id])
+
+  @@index([organizationId, productId])
+  @@index([organizationId, createdAt(sort: Desc)])
+  @@map("pricings")
+}
+
+model Order {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  externalId     String?     @map("external_id")
+  platform       String
+  orderDate      DateTime    @map("order_date") @db.Timestamptz(6)
+  status         OrderStatus @default(PENDENTE)
+  customerName   String?     @map("customer_name")
+  customerCity   String?     @map("customer_city")
+  customerState  String?     @map("customer_state")
+  grossRevenue   Decimal     @map("gross_revenue") @db.Decimal(10, 2)
+  platformFee    Decimal     @default(0) @map("platform_fee") @db.Decimal(10, 2)
+  shippingCost   Decimal     @default(0) @map("shipping_cost") @db.Decimal(10, 2)
+  productCost    Decimal     @default(0) @map("product_cost") @db.Decimal(10, 2)
+  taxes          Decimal     @default(0) @db.Decimal(10, 2)
+  netProfit      Decimal     @map("net_profit") @db.Decimal(10, 2)
+  netMargin      Decimal     @map("net_margin") @db.Decimal(5, 2)
+  notes          String?
+  source         OrderSource @default(MANUAL)
+  createdBy      String      @map("created_by") @db.Uuid
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  creator      User         @relation(fields: [createdBy], references: [id])
+  items        OrderItem[]
+
+  @@index([organizationId, orderDate(sort: Desc)])
+  @@index([organizationId, status])
+  @@index([organizationId, platform])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String   @map("order_id") @db.Uuid
+  productId   String?  @map("product_id") @db.Uuid
+  sku         String?
+  productName String   @map("product_name")
+  quantity    Int
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(10, 2)
+  unitCost    Decimal  @default(0) @map("unit_cost") @db.Decimal(10, 2)
+  totalPrice  Decimal  @map("total_price") @db.Decimal(10, 2)
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model SeoCampaign {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String            @map("organization_id") @db.Uuid
+  name           String
+  platform       String
+  type           SeoCampaignType
+  status         SeoCampaignStatus @default(ATIVO)
+  budget         Decimal?          @db.Decimal(10, 2)
+  spent          Decimal           @default(0) @db.Decimal(10, 2)
+  impressions    Int               @default(0)
+  clicks         Int               @default(0)
+  conversions    Int               @default(0)
+  revenue        Decimal           @default(0) @db.Decimal(10, 2)
+  startDate      DateTime?         @map("start_date") @db.Date
+  endDate        DateTime?         @map("end_date") @db.Date
+  notes          String?
+  createdBy      String            @map("created_by") @db.Uuid
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  creator      User         @relation(fields: [createdBy], references: [id])
+
+  @@index([organizationId, status])
+  @@map("seo_campaigns")
+}
+
+model SeoKeyword {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String              @map("organization_id") @db.Uuid
+  keyword         String
+  platform        String
+  productId       String?             @map("product_id") @db.Uuid
+  searchVolume    Int?                @map("search_volume")
+  competition     KeywordCompetition?
+  currentPosition Int?                @map("current_position")
+  targetPosition  Int?                @map("target_position")
+  monthlySearches Int?                @map("monthly_searches")
+  notes           String?
+  lastChecked     DateTime?           @map("last_checked") @db.Timestamptz(6)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  product      Product?     @relation(fields: [productId], references: [id])
+
+  @@index([organizationId, platform])
+  @@map("seo_keywords")
+}
+
+model SeoContentAudit {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId       String   @map("organization_id") @db.Uuid
+  productId            String   @map("product_id") @db.Uuid
+  platform             String
+  currentTitle         String?  @map("current_title")
+  suggestedTitle       String?  @map("suggested_title")
+  currentDescription   String?  @map("current_description")
+  suggestedDescription String?  @map("suggested_description")
+  score                Int?
+  issues               Json?
+  createdBy            String   @map("created_by") @db.Uuid
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  product      Product      @relation(fields: [productId], references: [id])
+  creator      User         @relation(fields: [createdBy], references: [id])
+
+  @@index([organizationId, productId])
+  @@map("seo_content_audits")
+}
+
+model AuditLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  action    String
+  tableName String?  @map("table_name")
+  recordId  String?  @map("record_id") @db.Uuid
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([tableName, recordId])
+  @@map("audit_logs")
+}
