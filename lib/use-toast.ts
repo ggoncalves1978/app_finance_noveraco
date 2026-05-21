@@ -2,23 +2,15 @@ import * as React from "react"
 
 type ToastActionElement = React.ReactNode
 
-export interface Toast {
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  title?: React.ReactNode
-  description?: React.ReactNode
-  action?: ToastActionElement
-  variant?: "default" | "destructive"
-}
-
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
-type ToasterToast = Toast & {
+interface ToasterToast {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  variant?: "default" | "destructive"
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -143,9 +135,9 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id" | "open" | "onOpenChange">
+type ToastOptions = Omit<ToasterToast, "id" | "open" | "onOpenChange">
 
-function toast({ ...props }: Toast) {
+function toast({ ...props }: ToastOptions) {
   const id = genId()
 
   const update = (props: ToasterToast) =>

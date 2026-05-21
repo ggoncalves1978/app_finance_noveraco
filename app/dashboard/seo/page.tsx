@@ -33,7 +33,7 @@ interface Keyword {
   keyword: string
   platform: string
   searchVolume: number | null
-  competition: string | null
+  competition: 'BAIXA' | 'MEDIA' | 'ALTA' | null
   currentPosition: number | null
   targetPosition: number | null
   product?: { sku: string; name: string } | null
