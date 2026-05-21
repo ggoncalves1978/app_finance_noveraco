@@ -20,7 +20,8 @@
       "PowerShell(\"Server killed\")",
       "Bash(curl -s http://localhost:3000/dashboard/vendas)",
       "Bash(git commit -m 'Start Phase 4: SEO Module with Campaigns and Keywords Management *)",
-      "Bash(git commit -m 'Fix TypeScript errors in SEO components and UI utils *)"
+      "Bash(git commit -m 'Fix TypeScript errors in SEO components and UI utils *)",
+      "Bash(git commit -m 'Fix SEO page layout: move to correct directory structure *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Gabriel Gon�alves\\OneDrive\\Projetos\\GitHub_Personal\\Projetos\\app_financas_novera"
