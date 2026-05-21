@@ -13,7 +13,13 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Gabriel Gonçalves\\\\OneDrive\\\\Projetos\\\\GitHub_Personal\\\\Projetos\\\\app_financas_novera\" -Recurse -Include \"page.tsx\", \"layout.tsx\")",
       "Bash(Select-Object FullName)",
       "Bash(pkill -f \"node.*dev\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(\"Server killed\")",
+      "Bash(curl -s http://localhost:3000/dashboard/vendas)",
+      "Bash(git commit -m 'Start Phase 4: SEO Module with Campaigns and Keywords Management *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Gabriel Gon�alves\\OneDrive\\Projetos\\GitHub_Personal\\Projetos\\app_financas_novera"

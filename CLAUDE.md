@@ -44,7 +44,17 @@ Internal financial management platform for **Novera Co.**, a Brazilian e-commerc
 - [x] **UX Enhancements** — Grid responsivo para filtros, cards com gradients, ícones semânticos
 - [x] **Commit Fase 3** — Concluído em commit 3ffdf76
 
-### Fase 4 — SEO & Deploy (Semana 7–8) — Pendente
+### Fase 4 — SEO & Deploy (Semana 7–8) 🚀 Em Andamento (iniciado 2026-05-21)
+- [x] **Painel SEO** — Dashboard, campanhas, keywords, metrics
+  - KPI Cards (campanhas ativas, impressões, cliques, ROAS)
+  - Gráfico de métricas (últimos 6 meses)
+  - Tabela de campanhas com CRUD
+  - Tabela de palavras-chave com CRUD
+  - Forms para criar campanhas e keywords
+- [ ] **Análise de Conteúdo (IA)** — Sugestões de título/descrição
+- [ ] **Stubs de integrações** — Selle7, Bling, APIs de plataformas
+- [ ] **Testes de segurança**
+- [ ] **Deploy e configuração de domínio**
 
 ## Technology Stack
 
@@ -257,15 +267,18 @@ const profile = await prisma.user.findUnique({ where: { id: user.id } })
 - Grid layouts for responsiveness: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`
 - Color semantics: green for profit, red for loss, blue for revenue, purple for margins
 
-## Recent Changes (2026-05-19)
+## Recent Changes (2026-05-21)
 
 **Commits:**
-- `875950f` — Complete Phase 2: Pricing Module with Enhanced UX
-- `3ffdf76` — Start Phase 3: Sales Module with KPIs and Order Management
+- `16e70ea` — Update CLAUDE.md with Phases 2 and 3 completion details (2026-05-19)
+- `3ffdf76` — Start Phase 3: Sales Module with KPIs and Order Management (2026-05-19)
+- `875950f` — Complete Phase 2: Pricing Module with Enhanced UX (2026-05-19)
 
-**Key Improvements:**
-- Enhanced KPI cards with gradients and semantic icons
-- Improved filter UI with responsive grid layout
-- Added active filters display for better UX
-- Better loading states and error handling
-- Color-coded components for quick visual scanning
+**Key Improvements (Fase 4):**
+- SEO Panel with KPI cards (active campaigns, impressions, clicks, ROAS)
+- 6-month metrics chart (impressions, clicks, conversions)
+- Campaigns table with full CRUD operations
+- Keywords table with management
+- Campaign and keyword creation forms
+- Toast notifications for user feedback
+- New UI components: tabs, form, toast system
