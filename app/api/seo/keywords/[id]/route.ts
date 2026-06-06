@@ -28,6 +28,7 @@ export async function PATCH(
   const body = await request.json()
   const {
     keyword: newKeyword,
+    platform,
     searchVolume,
     competition,
     currentPosition,
@@ -39,8 +40,9 @@ export async function PATCH(
     where: { id },
     data: {
       ...(newKeyword ? { keyword: newKeyword } : {}),
+      ...(platform ? { platform } : {}),
       ...(searchVolume !== undefined ? { searchVolume: searchVolume ? parseInt(searchVolume) : null } : {}),
-      ...(competition ? { competition: competition as KeywordCompetition } : {}),
+      ...(competition !== undefined ? { competition: competition ? (competition as KeywordCompetition) : null } : {}),
       ...(currentPosition !== undefined ? { currentPosition: currentPosition ? parseInt(currentPosition) : null } : {}),
       ...(targetPosition !== undefined ? { targetPosition: targetPosition ? parseInt(targetPosition) : null } : {}),
       ...(notes !== undefined ? { notes } : {}),

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { SeoCampaignStatus } from '@prisma/client'
+import { SeoCampaignStatus, SeoCampaignType } from '@prisma/client'
 
 export async function PATCH(
   request: Request,
@@ -26,12 +26,18 @@ export async function PATCH(
   }
 
   const body = await request.json()
-  const { name, status, budget, spent, impressions, clicks, conversions, revenue, notes } = body
+  const {
+    name, platform, type, status,
+    budget, spent, impressions, clicks, conversions, revenue,
+    startDate, endDate, notes,
+  } = body
 
   const updated = await prisma.seoCampaign.update({
     where: { id },
     data: {
       ...(name ? { name } : {}),
+      ...(platform ? { platform } : {}),
+      ...(type ? { type: type as SeoCampaignType } : {}),
       ...(status ? { status: status as SeoCampaignStatus } : {}),
       ...(budget !== undefined ? { budget: budget ? parseFloat(budget) : null } : {}),
       ...(spent !== undefined ? { spent: parseFloat(spent) } : {}),
@@ -39,6 +45,8 @@ export async function PATCH(
       ...(clicks !== undefined ? { clicks: parseInt(clicks) } : {}),
       ...(conversions !== undefined ? { conversions: parseInt(conversions) } : {}),
       ...(revenue !== undefined ? { revenue: parseFloat(revenue) } : {}),
+      ...(startDate !== undefined ? { startDate: startDate ? new Date(startDate) : null } : {}),
+      ...(endDate !== undefined ? { endDate: endDate ? new Date(endDate) : null } : {}),
       ...(notes !== undefined ? { notes } : {}),
     },
     include: { creator: { select: { name: true } } },

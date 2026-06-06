@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -29,23 +29,38 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2 } from 'lucide-react'
+import { SeoCampaignStatus } from '@prisma/client'
 
 const campaignSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
   platform: z.string().min(1, 'Selecione uma plataforma'),
   type: z.enum(['SEO_ORGANICO', 'PRODUTO_PATROCINADO', 'ADS']),
+  status: z.enum(['ATIVO', 'PAUSADO', 'ENCERRADO']).optional(),
   budget: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   notes: z.string().optional(),
 })
 
-type CampaignForm = z.infer<typeof campaignSchema>
+type CampaignFormData = z.infer<typeof campaignSchema>
+
+interface CampaignData {
+  id: string
+  name: string
+  platform: string
+  type: string
+  status: SeoCampaignStatus
+  budget: number | null
+  startDate?: string | null
+  endDate?: string | null
+  notes?: string | null
+}
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: CampaignForm) => Promise<void>
+  onSubmit: (data: CampaignFormData) => Promise<void>
+  campaign?: CampaignData | null
   isLoading?: boolean
 }
 
@@ -62,15 +77,27 @@ const types = [
   { value: 'ADS', label: 'Anúncios' },
 ]
 
-export function CampaignForm({ open, onOpenChange, onSubmit, isLoading }: Props) {
-  const [error, setError] = useState<string>('')
+const statuses = [
+  { value: 'ATIVO', label: 'Ativo' },
+  { value: 'PAUSADO', label: 'Pausado' },
+  { value: 'ENCERRADO', label: 'Encerrado' },
+]
 
-  const form = useForm<CampaignForm>({
+function toDateInput(value?: string | null): string {
+  if (!value) return ''
+  return value.slice(0, 10)
+}
+
+export function CampaignForm({ open, onOpenChange, onSubmit, campaign, isLoading }: Props) {
+  const isEditing = !!campaign
+
+  const form = useForm<CampaignFormData>({
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       name: '',
       platform: '',
       type: 'SEO_ORGANICO',
+      status: undefined,
       budget: '',
       startDate: '',
       endDate: '',
@@ -78,28 +105,48 @@ export function CampaignForm({ open, onOpenChange, onSubmit, isLoading }: Props)
     },
   })
 
-  const handleSubmit = async (data: CampaignForm) => {
-    try {
-      setError('')
-      await onSubmit(data)
-      form.reset()
-      onOpenChange(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar campanha')
+  useEffect(() => {
+    if (open) {
+      form.reset(
+        campaign
+          ? {
+              name: campaign.name,
+              platform: campaign.platform,
+              type: campaign.type as CampaignFormData['type'],
+              status: campaign.status,
+              budget: campaign.budget != null ? String(campaign.budget) : '',
+              startDate: toDateInput(campaign.startDate),
+              endDate: toDateInput(campaign.endDate),
+              notes: campaign.notes ?? '',
+            }
+          : {
+              name: '',
+              platform: '',
+              type: 'SEO_ORGANICO',
+              status: undefined,
+              budget: '',
+              startDate: '',
+              endDate: '',
+              notes: '',
+            }
+      )
     }
+  }, [open, campaign])
+
+  const handleSubmit = async (data: CampaignFormData) => {
+    await onSubmit(data)
+    onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Nova Campanha SEO</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Campanha' : 'Nova Campanha SEO'}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
             <FormField
               control={form.control}
               name="name"
@@ -164,6 +211,33 @@ export function CampaignForm({ open, onOpenChange, onSubmit, isLoading }: Props)
               )}
             />
 
+            {isEditing && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {statuses.map(s => (
+                          <SelectItem key={s.value} value={s.value}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="budget"
@@ -171,12 +245,7 @@ export function CampaignForm({ open, onOpenChange, onSubmit, isLoading }: Props)
                 <FormItem>
                   <FormLabel>Orçamento (R$)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                    />
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -218,11 +287,7 @@ export function CampaignForm({ open, onOpenChange, onSubmit, isLoading }: Props)
                 <FormItem>
                   <FormLabel>Notas</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Observações..."
-                      className="resize-none"
-                      {...field}
-                    />
+                    <Textarea placeholder="Observações..." className="resize-none" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -240,7 +305,7 @@ export function CampaignForm({ open, onOpenChange, onSubmit, isLoading }: Props)
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar Campanha
+                {isEditing ? 'Salvar alterações' : 'Criar Campanha'}
               </Button>
             </div>
           </form>

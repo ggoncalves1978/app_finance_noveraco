@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -35,16 +35,29 @@ const keywordSchema = z.object({
   platform: z.string().min(1, 'Selecione uma plataforma'),
   searchVolume: z.string().optional(),
   competition: z.enum(['BAIXA', 'MEDIA', 'ALTA']).optional(),
+  currentPosition: z.string().optional(),
   targetPosition: z.string().optional(),
   notes: z.string().optional(),
 })
 
-type KeywordForm = z.infer<typeof keywordSchema>
+type KeywordFormData = z.infer<typeof keywordSchema>
+
+interface KeywordData {
+  id: string
+  keyword: string
+  platform: string
+  searchVolume: number | null
+  competition: 'BAIXA' | 'MEDIA' | 'ALTA' | null
+  currentPosition: number | null
+  targetPosition: number | null
+  notes?: string | null
+}
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: KeywordForm) => Promise<void>
+  onSubmit: (data: KeywordFormData) => Promise<void>
+  keyword?: KeywordData | null
   isLoading?: boolean
 }
 
@@ -61,43 +74,62 @@ const competitions = [
   { value: 'ALTA', label: 'Alta' },
 ]
 
-export function KeywordForm({ open, onOpenChange, onSubmit, isLoading }: Props) {
-  const [error, setError] = useState<string>('')
+export function KeywordForm({ open, onOpenChange, onSubmit, keyword, isLoading }: Props) {
+  const isEditing = !!keyword
 
-  const form = useForm<KeywordForm>({
+  const form = useForm<KeywordFormData>({
     resolver: zodResolver(keywordSchema),
     defaultValues: {
       keyword: '',
       platform: '',
       searchVolume: '',
       competition: undefined,
+      currentPosition: '',
       targetPosition: '',
       notes: '',
     },
   })
 
-  const handleSubmit = async (data: KeywordForm) => {
-    try {
-      setError('')
-      await onSubmit(data)
-      form.reset()
-      onOpenChange(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao adicionar palavra-chave')
+  useEffect(() => {
+    if (open) {
+      form.reset(
+        keyword
+          ? {
+              keyword: keyword.keyword,
+              platform: keyword.platform,
+              searchVolume: keyword.searchVolume != null ? String(keyword.searchVolume) : '',
+              competition: keyword.competition ?? undefined,
+              currentPosition: keyword.currentPosition != null ? String(keyword.currentPosition) : '',
+              targetPosition: keyword.targetPosition != null ? String(keyword.targetPosition) : '',
+              notes: keyword.notes ?? '',
+            }
+          : {
+              keyword: '',
+              platform: '',
+              searchVolume: '',
+              competition: undefined,
+              currentPosition: '',
+              targetPosition: '',
+              notes: '',
+            }
+      )
     }
+  }, [open, keyword])
+
+  const handleSubmit = async (data: KeywordFormData) => {
+    await onSubmit(data)
+    onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Nova Palavra-chave</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Palavra-chave' : 'Nova Palavra-chave'}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
             <FormField
               control={form.control}
               name="keyword"
@@ -144,11 +176,7 @@ export function KeywordForm({ open, onOpenChange, onSubmit, isLoading }: Props) 
                 <FormItem>
                   <FormLabel>Volume Busca Mensal</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 1500"
-                      {...field}
-                    />
+                    <Input type="number" placeholder="Ex: 1500" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -161,7 +189,7 @@ export function KeywordForm({ open, onOpenChange, onSubmit, isLoading }: Props) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Concorrência</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select value={field.value ?? ''} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -180,23 +208,37 @@ export function KeywordForm({ open, onOpenChange, onSubmit, isLoading }: Props) 
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="targetPosition"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Posição Meta</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Ex: 5"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div className="grid grid-cols-2 gap-4">
+              {isEditing && (
+                <FormField
+                  control={form.control}
+                  name="currentPosition"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Posição Atual</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Ex: 12" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+
+              <FormField
+                control={form.control}
+                name="targetPosition"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Posição Meta</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Ex: 5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -205,11 +247,7 @@ export function KeywordForm({ open, onOpenChange, onSubmit, isLoading }: Props) 
                 <FormItem>
                   <FormLabel>Notas</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Observações..."
-                      className="resize-none"
-                      {...field}
-                    />
+                    <Textarea placeholder="Observações..." className="resize-none" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -227,7 +265,7 @@ export function KeywordForm({ open, onOpenChange, onSubmit, isLoading }: Props) 
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Adicionar
+                {isEditing ? 'Salvar alterações' : 'Adicionar'}
               </Button>
             </div>
           </form>
