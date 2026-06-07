@@ -41,7 +41,6 @@ function LoginContent() {
     }
 
     router.push(next)
-    router.refresh()
   }
 
   return (
