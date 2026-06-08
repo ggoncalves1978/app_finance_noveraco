@@ -93,7 +93,7 @@ export function PricingCalculator({ products, platforms, pricingId, initialValue
   // Preview em tempo real
   useEffect(() => {
     const v = watched
-    if (!v.platform || v.costPrice == null || v.commissionRate == null || !v.desiredMargin) { setPreview(null); return }
+    if (!v.platform || !Number.isFinite(v.costPrice) || !Number.isFinite(v.commissionRate) || !v.desiredMargin) { setPreview(null); return }
     const err = Calc.validate({
       costPrice:      v.costPrice ?? 0,
       shippingCost:   v.shippingCost ?? 0,
@@ -114,7 +114,7 @@ export function PricingCalculator({ products, platforms, pricingId, initialValue
       })
       setPreview({ price: r.suggestedPrice, profit: r.netProfit, margin: r.netMarginPercent })
     } catch { setPreview(null) }
-  }, [watched.costPrice, watched.shippingCost, watched.commissionRate, watched.fixedFee, watched.taxRate, watched.desiredMargin])
+  }, [watched.platform, watched.costPrice, watched.shippingCost, watched.commissionRate, watched.fixedFee, watched.taxRate, watched.desiredMargin])
 
   // Preenche campos ao selecionar plataforma
   function onPlatformChange(value: string) {
