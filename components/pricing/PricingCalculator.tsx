@@ -93,7 +93,7 @@ export function PricingCalculator({ products, platforms, pricingId, initialValue
   // Preview em tempo real
   useEffect(() => {
     const v = watched
-    if (!v.costPrice || !v.commissionRate || !v.desiredMargin) { setPreview(null); return }
+    if (!v.platform || v.costPrice == null || v.commissionRate == null || !v.desiredMargin) { setPreview(null); return }
     const err = Calc.validate({
       costPrice:      v.costPrice ?? 0,
       shippingCost:   v.shippingCost ?? 0,
@@ -163,7 +163,6 @@ export function PricingCalculator({ products, platforms, pricingId, initialValue
         return
       }
       router.push('/dashboard/precificacao')
-      router.refresh()
     } catch {
       setSaveError('Erro de conexão.')
     } finally {
